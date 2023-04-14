@@ -2,10 +2,12 @@
 
 namespace ChatService.Hub
 {
+    using ChatService.Data;
     using ChatService.Data.Models;
     using ChatService.Repositories;
 
     using Microsoft.AspNetCore.Identity;
+    using Microsoft.EntityFrameworkCore;
 
     using Hub = Microsoft.AspNetCore.SignalR.Hub;
 
@@ -13,15 +15,17 @@ namespace ChatService.Hub
     {
         private readonly string _botUser;
         private readonly IDictionary<string, UserConnection> _connections;
-        private IChatRepository _repo;
+        private readonly ApplicationDbContext _dbContext;
+        private readonly IChatRepository _repo;
         private readonly UserManager<ApplicationUser> _userManager;
 
 
-        public ChatHub(IDictionary<string, UserConnection> connections, UserManager<ApplicationUser> userManager)
+        public ChatHub(IDictionary<string, UserConnection> connections, UserManager<ApplicationUser> userManager, ApplicationDbContext dbContext)
         {
             _botUser = "";
             _connections = connections;
             _userManager = userManager;
+            _dbContext = dbContext;
         }
 
         public override Task OnDisconnectedAsync(Exception exception)
@@ -36,6 +40,15 @@ namespace ChatService.Hub
             return base.OnDisconnectedAsync(exception);
         }
 
+        public async Task GetUsers(Guid userId)
+        {
+            // userId = Guid.Parse(input: Context.User.FindFirst(type: "UserId")?.Value);
+
+            var users = await _dbContext.Users.Where(u=>u.Id != userId).ToListAsync();
+
+            await Clients.Caller.SendAsync("GetUsers", users);
+        }
+
         public Task GetChats(Guid userId)
         {
             // userId = Guid.Parse(input: Context.User.FindFirst(type: "UserId")?.Value);
@@ -47,9 +60,9 @@ namespace ChatService.Hub
 
         public Task GetChatById(int chatId)
         {
-            var chats = _repo.GetPrivateChats(chatId);
+            var chats = _repo.GetChat(chatId);
 
-            return Clients.Caller.SendAsync("GetChats", chats);
+            return Clients.Caller.SendAsync("GetChat", chats);
         }
 
         public async Task JoinRoom(UserConnection userConnection)
