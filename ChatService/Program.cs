@@ -1,4 +1,5 @@
 using System.Text;
+using System.Text.Json.Serialization;
 
 using ChatService;
 using ChatService.Data;
@@ -7,37 +8,14 @@ using ChatService.Hub;
 using ChatService.Repositories;
 
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Http.Json;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args: args);
-
-builder.Services.AddSignalR();
-
-builder.Services.AddControllers();
-
-builder.Services.AddEndpointsApiExplorer();
-
-//builder.Services.AddAuthentication(configureOptions: o =>
-//    {
-//        o.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-//        o.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-//        o.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
-//    }).AddJwtBearer(configureOptions: o =>
-//    {
-//        o.RequireHttpsMetadata = true;
-//        o.SaveToken = true;
-//        o.TokenValidationParameters = new TokenValidationParameters
-//                                          {
-//                                              ValidateIssuer = false,
-//                                              ValidateIssuerSigningKey = true,
-//                                              IssuerSigningKey = new SymmetricSecurityKey(key: Encoding.ASCII.GetBytes(s: builder.Configuration[key: "JwtOptions:SecurityKey"])),
-//                                              ValidateAudience = false,
-//                                              ValidateLifetime = true,
-//                                              ClockSkew = TimeSpan.Zero
-//                                          };
-//    });
 
 builder.Services.AddCors(options =>
     {
@@ -66,21 +44,90 @@ builder.Services.AddIdentity<ApplicationUser, IdentityRole<Guid>>(setupAction: o
     .AddEntityFrameworkStores<ApplicationDbContext>()
     .AddDefaultTokenProviders();
 
+builder.Services.AddAuthentication(configureOptions: o =>
+    {
+        o.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+        o.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+        o.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
+    }).AddJwtBearer(configureOptions: o =>
+    {
+        o.RequireHttpsMetadata = true;
+        o.SaveToken = true;
+        o.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = false,
+            ValidateIssuerSigningKey = true,
+            IssuerSigningKey = new SymmetricSecurityKey(key: Encoding.ASCII.GetBytes(s: builder.Configuration[key: "JwtOptions:SecurityKey"])),
+            ValidateAudience = false,
+            ValidateLifetime = true,
+            ClockSkew = TimeSpan.Zero
+        };
+        o.Events = new JwtBearerEvents
+        {
+            OnMessageReceived = context =>
+                {
+                    var accessToken = context.Request.Headers["Authorization"];
+                    if (string.IsNullOrWhiteSpace(accessToken))
+                    {
+                        accessToken = context.Request.Query["access_token"];
+                    }
+
+                    // If the request is for our hub...
+                    var path = context.HttpContext.Request.Path;
+                    if (!string.IsNullOrEmpty(accessToken) &&
+                        (path.StartsWithSegments("/chat")))
+                    {
+                        // Read the token out of the query string
+                        context.Request.Headers["Authorization"] = "Bearer " + accessToken;
+                    }
+                    return Task.CompletedTask;
+                }
+        };
+    });
+
+builder.Services.AddAuthorization();
+
 builder.Services.AddSingleton<IDictionary<string, UserConnection>>
     (opts => new Dictionary<string, UserConnection>());
 
 
 builder.Services.AddTransient<IChatRepository, ChatRepository>();
 
+builder.Services.AddSignalR().AddJsonProtocol(o =>
+    {
+        o.PayloadSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles;
+    });
+
+
+using (IServiceScope scope = builder.Services.BuildServiceProvider().CreateScope())
+{
+    IServiceProvider scopeServiceProvider = scope.ServiceProvider;
+    
+    ILogger logger = scopeServiceProvider.GetRequiredService<ILoggerFactory>()
+            .CreateLogger(categoryName: "Data Seeding context");
+        logger.LogInformation(message: "Seeding Default Data Started");
+
+        IChatRepository _repo = scopeServiceProvider.GetRequiredService<IChatRepository> ();
+
+        _repo.CreateGeneralChat();
+
+        logger.LogInformation(message: "Finished Seeding Default Data");
+        logger.LogInformation(message: "Application Starting");
+}
+
+
+
 WebApplication app = builder.Build();
 
 app.UseCors();
 
-//app.UseAuthentication();
+app.UseHttpsRedirection();
 
-//app.UseAuthorization();
+app.UseRouting();
 
-app.MapControllers();
+app.UseAuthentication();
+
+app.UseAuthorization();
 
 app.MapHub<ChatHub>("/chat");
 

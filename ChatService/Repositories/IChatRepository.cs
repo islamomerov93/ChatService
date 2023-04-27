@@ -4,13 +4,23 @@
 
     public interface IChatRepository
     {
-        Chat GetChat(int id);
-        Task CreateRoom(string name, Guid userId);
-        Task JoinRoom(int chatId, Guid userId);
-        IEnumerable<Chat> GetChats(Guid userId);
-        Task<int> CreatePrivateRoom(Guid rootId, Guid targetId);
-        IEnumerable<Chat> GetPrivateChats(Guid userId);
+        Chat GetGeneralChat();
 
-        Task<Message> CreateMessage(int chatId, string message, Guid userId);
+        Chat GetChatByRequestId(int id);
+
+        Task<Chat> GetChat(int chatId);
+
+        Task<IEnumerable<Notification>> GetNotifications(Guid userId);
+
+        Task<Chat> CreateGeneralChat();
+
+        Task<Chat> CreateRequestChat(int requestId, string name = null);
+
+        Task<Tuple<Message, ChatUser, Notification>> CreateMessage(
+            IEnumerable<Guid> mentionedUsers,
+            string message,
+            ApplicationUser user,
+            int? requestId,
+            string requestNumber);
     }
 }

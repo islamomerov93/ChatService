@@ -2,8 +2,10 @@
 
 namespace ChatService.Hub
 {
-    using ChatService.Data;
+    using System.IdentityModel.Tokens.Jwt;
+
     using ChatService.Data.Models;
+    using ChatService.Dtos;
     using ChatService.Repositories;
 
     using Microsoft.AspNetCore.Identity;
@@ -13,84 +15,180 @@ namespace ChatService.Hub
 
     public class ChatHub : Hub
     {
-        private readonly string _botUser;
         private readonly IDictionary<string, UserConnection> _connections;
-        private readonly ApplicationDbContext _dbContext;
         private readonly IChatRepository _repo;
         private readonly UserManager<ApplicationUser> _userManager;
 
 
-        public ChatHub(IDictionary<string, UserConnection> connections, UserManager<ApplicationUser> userManager, ApplicationDbContext dbContext)
+        public ChatHub(
+            IDictionary<string, UserConnection> connections,
+            UserManager<ApplicationUser> userManager,
+            IChatRepository repo)
         {
-            _botUser = "";
             _connections = connections;
             _userManager = userManager;
-            _dbContext = dbContext;
+            _repo = repo;
         }
 
         public override Task OnDisconnectedAsync(Exception exception)
         {
-            if (_connections.TryGetValue(Context.ConnectionId, out UserConnection userConnection))
+            if (_connections.Keys.Contains(Context.ConnectionId))
             {
                 _connections.Remove(Context.ConnectionId);
-                Clients.Group(userConnection.Room).SendAsync("ReceiveMessage", _botUser, $"{userConnection.User} has left");
-                SendUsersConnected(userConnection.Room);
             }
 
             return base.OnDisconnectedAsync(exception);
         }
 
-        public async Task GetUsers(Guid userId)
+        public override async Task OnConnectedAsync()
         {
-            // userId = Guid.Parse(input: Context.User.FindFirst(type: "UserId")?.Value);
-
-            var users = await _dbContext.Users.Where(u=>u.Id != userId).ToListAsync();
-
-            await Clients.Caller.SendAsync("GetUsers", users);
-        }
-
-        public Task GetChats(Guid userId)
-        {
-            // userId = Guid.Parse(input: Context.User.FindFirst(type: "UserId")?.Value);
-
-            var chats = _repo.GetChats(userId);
-
-            return Clients.Caller.SendAsync("GetChats", chats);
-        }
-
-        public Task GetChatById(int chatId)
-        {
-            var chats = _repo.GetChat(chatId);
-
-            return Clients.Caller.SendAsync("GetChat", chats);
-        }
-
-        public async Task JoinRoom(UserConnection userConnection)
-        {
-            await Groups.AddToGroupAsync(Context.ConnectionId, userConnection.Room);
-
-            _connections[Context.ConnectionId] = userConnection;
-
-            await Clients.Group(userConnection.Room).SendAsync("ReceiveMessage", _botUser, $"{userConnection.User} has joined {userConnection.Room}");
-
-            await SendUsersConnected(userConnection.Room);
-        }
-
-        public async Task SendMessage(string message)
-        {
-            if (_connections.TryGetValue(Context.ConnectionId, out UserConnection userConnection))
+            var user = await GetUserAsync();
+            _connections[Context.ConnectionId] = new UserConnection
             {
-                await Clients.Group(userConnection.Room).SendAsync("ReceiveMessage", userConnection.User, message);
-            }
+                UserId = user.Id,
+                ConnectedDate = DateTime.UtcNow
+            };
+
+            var users = _connections.Values
+                .Select(c => c?.UserId);
+
+            await Clients.Others.SendAsync("SetActiveUsers", users);
+
+            await base.OnConnectedAsync();
         }
 
-        public Task SendUsersConnected(string room)
+        public async Task<object> GetUsers()
         {
-            var users = _connections.Values
-                .Where(c => c.Room == room)
-                .Select(c => c.User);
+            var user = await GetUserAsync();
 
-            return Clients.Group(room).SendAsync("UsersInRoom", users);
+            return await _userManager.Users
+                       .Where(u => u.Id != user.Id)
+                       .Select(u=> new { UserName = $"{u.FirstName} {u.LastName}", UserId = u.Id})
+                       .ToListAsync();
+        }
+
+        public async Task GetNotifications()
+        {
+            var user = await GetUserAsync();
+
+            var notifications = await _repo.GetNotifications(user.Id);
+
+            await Clients.Caller.SendAsync("SetUsers", notifications.Select(n=> new NotificationDto
+            {
+                Subject = n.Subjet,
+                Message = n.Message,
+                Timestamp = n.Timestamp,
+                RequestId = n.Chat.RequestId
+            }));
+        }
+
+        public async Task<ChatDto> GetGeneralChat()
+        {
+            var chat = _repo.GetGeneralChat();
+
+            return new ChatDto
+            {
+                Id = chat.Id,
+                RequestId = chat.RequestId,
+                Messages = chat.Messages.Select(m => new MessageDto
+                {
+                    Text = m.Text,
+                    UserId = m.UserId,
+                    Timestamp = m.Timestamp
+                }).ToList(),
+                Users = chat.Users.Select(u => new ChatUserDto
+                {
+                    UserId = u.UserId,
+                    Role = u.Role,
+                    Username = $"{u.User.FirstName} {u.User.LastName}",
+                    IsActive = _connections.Values.Any(c => c.UserId == u.UserId)
+                }).ToList()
+            };
+        }
+
+        public Task GetChatByRequestId(int requestId)
+        {
+            var chat = _repo.GetChatByRequestId(requestId);
+
+            return Clients.Caller.SendAsync("SetChat", chat);
+        }
+
+        public async Task SendMessage(IEnumerable<Guid> mentionedUsers, string message, int? requestId, string requestNumber)
+        {
+            var user = await GetUserAsync();
+
+            var result = await _repo.CreateMessage(mentionedUsers, message, user, requestId, requestNumber);
+
+            var newMessage = result.Item1;
+            var chatUser = result.Item2;
+            var notification = result.Item3;
+
+            await Clients.All.SendAsync(
+                    "SetGeneralChat",
+                    new MessageDto
+                    {
+                        Text = newMessage.Text,
+                        UserId = newMessage.UserId,
+                        Timestamp = newMessage.Timestamp
+                    },
+                    new ChatUserDto
+                    {
+                        UserId = newMessage.UserId,
+                        Role = chatUser.Role,
+                        Username = $"{chatUser.User.FirstName} {chatUser.User.LastName}",
+                        IsActive = _connections.Values.Any(c => c.UserId == chatUser.UserId)
+                    });
+
+            List<string> usersNeedToNotify = new List<string>();
+
+            foreach (var connection in _connections)
+            {
+                if (mentionedUsers.Contains(connection.Value.UserId))
+                {
+                    usersNeedToNotify.Add(connection.Key);
+                }
+            }
+            
+            await Clients.Clients(usersNeedToNotify)
+                .SendAsync("SetNewNotification",
+                new NotificationDto
+                {
+                    Subject = notification.Subjet,
+                    Message = notification.Message,
+                    Timestamp = notification.Timestamp,
+                    RequestId = requestId
+                });
+        }
+
+        private async Task<ApplicationUser> GetUserAsync()
+        {
+            var context = Context.GetHttpContext();
+            try
+            {
+                string jwtToken = context.Request.Headers[key: "Authorization"].ToString();
+                if (string.IsNullOrWhiteSpace(value: jwtToken))
+                {
+                    return default;
+                }
+
+                jwtToken = jwtToken.Replace(oldValue: "Bearer ", newValue: string.Empty);
+                JwtSecurityTokenHandler handler = new JwtSecurityTokenHandler();
+                JwtSecurityToken token = handler.ReadToken(token: jwtToken) as JwtSecurityToken;
+
+                UserManager<ApplicationUser> userManager = context.RequestServices.GetRequiredService<UserManager<ApplicationUser>>();
+
+                Guid userId = Guid.Parse(input: token.Claims.First(predicate: c => c.Type == "userId").Value);
+
+                ApplicationUser user = await userManager.Users.FirstAsync(predicate: u => u.Id == userId);
+
+                await userManager.UpdateAsync(user: user);
+
+                return user;
+            }
+            catch
+            {
+                return default;
+            }
         }
     }
 }

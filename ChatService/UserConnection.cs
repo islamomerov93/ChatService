@@ -2,7 +2,7 @@
 {
     public class UserConnection
     {
-        public string User { get; set; }
-        public string Room { get; set; }
+        public Guid UserId { get; set; }
+        public DateTime ConnectedDate { get; set; }
     }
 }

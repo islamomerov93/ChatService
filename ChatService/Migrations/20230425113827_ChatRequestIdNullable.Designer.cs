@@ -4,6 +4,7 @@ using ChatService.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace ChatService.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20230425113827_ChatRequestIdNullable")]
+    partial class ChatRequestIdNullable
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -130,24 +133,16 @@ namespace ChatService.Migrations
 
             modelBuilder.Entity("ChatService.Data.Models.ChatUser", b =>
                 {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
                     b.Property<int>("ChatId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("Role")
                         .HasColumnType("int");
 
                     b.Property<Guid>("UserId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.HasKey("Id");
+                    b.Property<int>("Role")
+                        .HasColumnType("int");
 
-                    b.HasIndex("ChatId");
+                    b.HasKey("ChatId", "UserId");
 
                     b.HasIndex("UserId");
 
@@ -179,48 +174,6 @@ namespace ChatService.Migrations
                     b.HasIndex("ChatId");
 
                     b.ToTable("Messages");
-                });
-
-            modelBuilder.Entity("ChatService.Data.Models.Notification", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<int>("ChatId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("Message")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("Subjet")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<DateTime>("Timestamp")
-                        .HasColumnType("datetime2");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ChatId");
-
-                    b.ToTable("Notifications");
-                });
-
-            modelBuilder.Entity("ChatService.Data.Models.NotificationUser", b =>
-                {
-                    b.Property<int>("NotificationId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("ChatUserId")
-                        .HasColumnType("int");
-
-                    b.HasKey("NotificationId", "ChatUserId");
-
-                    b.HasIndex("ChatUserId");
-
-                    b.ToTable("NotificationUsers");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRole<System.Guid>", b =>
@@ -384,36 +337,6 @@ namespace ChatService.Migrations
                     b.Navigation("Chat");
                 });
 
-            modelBuilder.Entity("ChatService.Data.Models.Notification", b =>
-                {
-                    b.HasOne("ChatService.Data.Models.Chat", "Chat")
-                        .WithMany("Notifications")
-                        .HasForeignKey("ChatId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Chat");
-                });
-
-            modelBuilder.Entity("ChatService.Data.Models.NotificationUser", b =>
-                {
-                    b.HasOne("ChatService.Data.Models.ChatUser", "ChatUser")
-                        .WithMany()
-                        .HasForeignKey("ChatUserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("ChatService.Data.Models.Notification", "Notification")
-                        .WithMany("MentionedUsers")
-                        .HasForeignKey("NotificationId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("ChatUser");
-
-                    b.Navigation("Notification");
-                });
-
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<System.Guid>", b =>
                 {
                     b.HasOne("Microsoft.AspNetCore.Identity.IdentityRole<System.Guid>", null)
@@ -474,14 +397,7 @@ namespace ChatService.Migrations
                 {
                     b.Navigation("Messages");
 
-                    b.Navigation("Notifications");
-
                     b.Navigation("Users");
-                });
-
-            modelBuilder.Entity("ChatService.Data.Models.Notification", b =>
-                {
-                    b.Navigation("MentionedUsers");
                 });
 #pragma warning restore 612, 618
         }

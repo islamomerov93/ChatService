@@ -27,6 +27,8 @@
 
         public DbSet<Chat> Chats { get; set; }
         public DbSet<Message> Messages { get; set; }
+        public DbSet<Notification> Notifications { get; set; }
+        public DbSet<NotificationUser> NotificationUsers { get; set; }
         public DbSet<ChatUser> ChatUsers { get; set; }
 
         protected override void OnModelCreating(ModelBuilder builder)
@@ -34,7 +36,10 @@
             base.OnModelCreating(builder);
 
             builder.Entity<ChatUser>()
-                .HasKey(x => new { x.ChatId, x.UserId });
+                .HasKey(x => x.Id);
+
+            builder.Entity<NotificationUser>()
+                .HasKey(x => new { x.NotificationId, x.ChatUserId });
 
             builder.Entity< IdentityRoleClaim<Guid>>(buildAction: entity => { entity.ToTable(name: "RoleClaims"); });
 

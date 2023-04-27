@@ -2,6 +2,8 @@
 {
     public enum ChatType
     {
+        General,
+        Request,
         Room,
         Private
     }
