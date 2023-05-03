@@ -146,8 +146,16 @@ namespace ChatService.Repositories
         public async Task<IEnumerable<Notification>> GetNotifications(Guid userId)
         {
             return await  _ctx.Notifications
+                .Include(n=>n.Chat)
                 .Where(x => x.MentionedUsers.Any(u => u.ChatUser.UserId != userId))
                 .ToListAsync();
+        }
+
+        public Task<int> GetNotificationsCount(Guid userId)
+        {
+            return this._ctx.Notifications
+                .Where(x => x.MentionedUsers.Any(u => u.ChatUser.UserId != userId))
+                .CountAsync();
         }
 
         //public async Task<int> CreatePrivateRoom(Guid rootId, Guid targetId)

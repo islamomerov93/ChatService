@@ -67,19 +67,26 @@ namespace ChatService.Hub
                        .ToListAsync();
         }
 
-        public async Task GetNotifications()
+        public async Task<IEnumerable<NotificationDto>> GetNotifications()
         {
             var user = await GetUserAsync();
 
             var notifications = await _repo.GetNotifications(user.Id);
 
-            await Clients.Caller.SendAsync("SetUsers", notifications.Select(n=> new NotificationDto
+            return notifications.Select(n=> new NotificationDto
             {
                 Subject = n.Subjet,
                 Message = n.Message,
                 Timestamp = n.Timestamp,
                 RequestId = n.Chat.RequestId
-            }));
+            });
+        }
+
+        public async Task<int> GetNotificationsCount()
+        {
+            var user = await GetUserAsync();
+
+            return await _repo.GetNotificationsCount(user.Id);
         }
 
         public async Task<ChatDto> GetGeneralChat()

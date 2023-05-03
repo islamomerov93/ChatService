@@ -10,6 +10,8 @@
 
         Task<Chat> GetChat(int chatId);
 
+        Task<int> GetNotificationsCount(Guid userId);
+
         Task<IEnumerable<Notification>> GetNotifications(Guid userId);
 
         Task<Chat> CreateGeneralChat();
