@@ -1,13 +1,14 @@
-﻿using Microsoft.AspNetCore.Identity;
-
-namespace ChatService.Data.Models
+﻿namespace ChatService.Dtos.UserDtos
 {
-    public class ApplicationUser : IdentityUser<Guid>
+    /// <summary>
+    /// The user dto.
+    /// </summary>
+    public class UserDto 
     {
-        public ApplicationUser() : base()
-        {
-            Chats = new List<ChatUser>();
-        }
+        /// <summary>
+        /// Gets or sets the user id.
+        /// </summary>
+        public Guid UserId { get; set; }
 
         /// <summary>
         /// Gets or sets the first name.
@@ -28,7 +29,5 @@ namespace ChatService.Data.Models
         /// Gets or sets a value indicating whether is online.
         /// </summary>
         public bool IsOnline { get; set; }
-
-        public ICollection<ChatUser> Chats { get; set; }
     }
 }

@@ -47,6 +47,12 @@ namespace ChatService.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("NVarChar");
 
+                    b.Property<bool>("IsOnline")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime?>("LastActiveDate")
+                        .HasColumnType("datetime2");
+
                     b.Property<string>("LastName")
                         .IsRequired()
                         .HasMaxLength(50)

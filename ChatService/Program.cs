@@ -8,11 +8,8 @@ using ChatService.Hub;
 using ChatService.Repositories;
 
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.AspNetCore.Http.Json;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args: args);
@@ -90,8 +87,12 @@ builder.Services.AddAuthorization();
 builder.Services.AddSingleton<IDictionary<string, UserConnection>>
     (opts => new Dictionary<string, UserConnection>());
 
+builder.Services.AddSingleton<IDictionary<string, RequestChatUserConnection>>
+    (opts => new Dictionary<string, RequestChatUserConnection>());
+
 
 builder.Services.AddTransient<IChatRepository, ChatRepository>();
+builder.Services.AddTransient<IUserRepository, UserRepository>();
 
 builder.Services.AddSignalR().AddJsonProtocol(o =>
     {

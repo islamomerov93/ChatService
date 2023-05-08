@@ -1,4 +1,4 @@
-﻿namespace ChatService.Dtos
+﻿namespace ChatService.Dtos.NotificationDtos
 {
     public class NotificationDto
     {

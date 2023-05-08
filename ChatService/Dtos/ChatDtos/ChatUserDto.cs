@@ -1,4 +1,4 @@
-﻿namespace ChatService.Dtos
+﻿namespace ChatService.Dtos.ChatDtos
 {
     using ChatService.Data.Models;
 

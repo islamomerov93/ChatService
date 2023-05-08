@@ -1,10 +1,9 @@
-using Microsoft.EntityFrameworkCore;
-
 namespace ChatService.Repositories
 {
     using ChatService.Data;
     using ChatService.Data.Models;
-    using ChatService.Dtos;
+
+    using Microsoft.EntityFrameworkCore;
 
     public class ChatRepository : IChatRepository
     {
@@ -126,7 +125,6 @@ namespace ChatService.Repositories
             return Tuple.Create(createMessage, chatUser, notification);
         }
 
-
         public IEnumerable<Chat> GetChats(Guid userId)
         {
             return _ctx.Chats
@@ -153,58 +151,9 @@ namespace ChatService.Repositories
 
         public Task<int> GetNotificationsCount(Guid userId)
         {
-            return this._ctx.Notifications
+            return _ctx.Notifications
                 .Where(x => x.MentionedUsers.Any(u => u.ChatUser.UserId != userId))
                 .CountAsync();
         }
-
-        //public async Task<int> CreatePrivateRoom(Guid rootId, Guid targetId)
-        //{
-        //    var chat = new Chat
-        //                   {
-        //                       Type = ChatType.Private
-        //                   };
-
-        //    chat.Users.Add(new ChatUser
-        //                       {
-        //                           UserId = targetId
-        //                       });
-
-        //    chat.Users.Add(new ChatUser
-        //                       {
-        //                           UserId = rootId
-        //                       });
-
-        //    _ctx.Chats.Add(chat);
-
-        //    await _ctx.SaveChangesAsync();
-
-        //    return chat.Id;
-        //}
-
-        //public IEnumerable<Chat> GetPrivateChats(Guid userId)
-        //{
-        //    return _ctx.Chats
-        //           .Include(x => x.Users)
-        //               .ThenInclude(x => x.User)
-        //           .Where(x => x.Type == ChatType.Private
-        //               && x.Users
-        //                   .Any(y => y.UserId == userId))
-        //           .ToList();
-        //}
-
-        //public async Task JoinRoom(int chatId, Guid userId)
-        //{
-        //    var chatUser = new ChatUser
-        //    {
-        //        ChatId = chatId,
-        //        UserId = userId,
-        //        Role = ChatUserRole.Member
-        //    };
-
-        //    _ctx.ChatUsers.Add(chatUser);
-
-        //    await _ctx.SaveChangesAsync();
-        //}
     }
 }

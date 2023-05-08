@@ -1,6 +1,7 @@
 ﻿using ChatService.Data.Models;
+using ChatService.Dtos.MessageDtos;
 
-namespace ChatService.Dtos
+namespace ChatService.Dtos.ChatDtos
 {
     public class ChatDto
     {
