@@ -6,7 +6,7 @@
     {
         Chat GetGeneralChat();
 
-        Chat GetChatByRequestId(int id);
+        Task<Chat> GetChatByRequestId(int id);
 
         Task<Chat> GetChat(int chatId);
 

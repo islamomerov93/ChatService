@@ -39,13 +39,19 @@ namespace ChatService.Repositories
             return chat;
         }
 
-        public Chat GetChatByRequestId(int requestId)
+        public async Task<Chat> GetChatByRequestId(int requestId)
         {
-            return _ctx.Chats
+            var chat = await _ctx.Chats
                 .Include(x => x.Users)
                     .ThenInclude(cu => cu.User)
                 .Include(x => x.Messages)
-                .FirstOrDefault(x => x.RequestId == requestId);
+                .FirstOrDefaultAsync(x => x.RequestId == requestId);
+
+            if (chat == null)
+            {
+                chat = await CreateRequestChat(requestId);
+            }
+            return chat;
         }
 
         public Chat GetGeneralChat()

@@ -141,7 +141,7 @@
 
         public async Task<ChatDto> GetChatByRequestId(int requestId)
         {
-            var chat = _chatRepository.GetChatByRequestId(requestId);
+            var chat = await _chatRepository.GetChatByRequestId(requestId);
 
             return new ChatDto
             {
