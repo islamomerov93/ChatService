@@ -152,6 +152,7 @@ namespace ChatService.Repositories
             return await  _ctx.Notifications
                 .Include(n=>n.Chat)
                 .Where(x => x.MentionedUsers.Any(u => u.ChatUser.UserId != userId))
+                .OrderByDescending(n=>n.Timestamp)
                 .ToListAsync();
         }
 
