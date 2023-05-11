@@ -163,7 +163,7 @@
             };
         }
 
-        public async Task SendMessage(IEnumerable<Guid> mentionedUsers, string message, int? requestId, string requestNumber)
+        public async Task SendRequestMessage(IEnumerable<Guid> mentionedUsers, string message, int? requestId, string requestNumber)
         {
             var user = await GetUserAsync();
 
