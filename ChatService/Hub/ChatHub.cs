@@ -277,7 +277,7 @@
 
                 ApplicationUser user = _userRepository.GetUser(u => u.Id == userId);
 
-                await userManager.UpdateAsync(user: user);
+                await _userRepository.UpdateUserAsync(user);
 
                 return user;
             }
