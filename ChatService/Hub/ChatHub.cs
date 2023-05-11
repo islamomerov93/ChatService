@@ -187,7 +187,7 @@
                         Role = chatUser.Role,
                         Username = $"{chatUser.User.FirstName} {chatUser.User.LastName}",
                         IsActive = _connections.Values.Any(c => c.UserId == chatUser.UserId)
-                    });
+                    }, requestId);
 
             List<string> usersNeedToNotify = new List<string>();
 
