@@ -91,8 +91,8 @@ builder.Services.AddSingleton<IDictionary<string, RequestChatUserConnection>>
     (opts => new Dictionary<string, RequestChatUserConnection>());
 
 
-builder.Services.AddTransient<IChatRepository, ChatRepository>();
-builder.Services.AddTransient<IUserRepository, UserRepository>();
+builder.Services.AddScoped<IChatRepository, ChatRepository>();
+builder.Services.AddScoped<IUserRepository, UserRepository>();
 
 builder.Services.AddSignalR().AddJsonProtocol(o =>
     {
