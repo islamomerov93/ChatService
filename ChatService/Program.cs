@@ -2,44 +2,22 @@ using System.Text;
 using System.Text.Json.Serialization;
 
 using ChatService;
-using ChatService.Data;
-using ChatService.Data.Models;
 using ChatService.Hub;
-using ChatService.Repositories;
 
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.AspNetCore.Identity;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+
+using Reset.Application.Interfaces.Repositories;
+using Reset.Infrastructure.Extensions.ServiceCollectionExtensions;
+using Reset.Infrastructure.InterfaceImplementations.Repositories;
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args: args);
 
-builder.Services.AddCors(options =>
-    {
-        options.AddDefaultPolicy(
-            configurePolicy: policy =>
-                {
-                    policy.WithOrigins("http://localhost:3000");
-                    policy.AllowCredentials();
-                    policy.AllowAnyHeader();
-                    policy.AllowAnyMethod();
-                });
-    });
+builder.Services.AddCorsPolicyExtension(builder.Configuration.GetSection("AllowedOrigins").Value.Split(","));
 
-builder.Services.AddDbContext<ApplicationDbContext>(optionsAction: options =>
-    options.UseSqlServer(connectionString: builder.Configuration.GetConnectionString(name: "DefaultConnection")));
+builder.Services.AddDbContextExtension(builder.Configuration);
 
-builder.Services.AddIdentity<ApplicationUser, IdentityRole<Guid>>(setupAction: opt =>
-        {
-            opt.Password.RequiredLength = 8;
-            opt.Password.RequireDigit = true;
-            opt.Password.RequireUppercase = true;
-            opt.Password.RequireLowercase = true;
-            opt.Password.RequireNonAlphanumeric = true;
-            opt.User.RequireUniqueEmail = true;
-        })
-    .AddEntityFrameworkStores<ApplicationDbContext>()
-    .AddDefaultTokenProviders();
+builder.Services.AddIdentityExtension();
 
 builder.Services.AddAuthentication(configureOptions: o =>
     {

@@ -2,16 +2,17 @@
 {
     using System.IdentityModel.Tokens.Jwt;
 
-    using ChatService.Data.Models;
-    using ChatService.Dtos.ChatDtos;
-    using ChatService.Dtos.MessageDtos;
-    using ChatService.Dtos.NotificationDtos;
-    using ChatService.Dtos.UserDtos;
-    using ChatService.Repositories;
-
     using Microsoft.AspNetCore.Identity;
     using Microsoft.AspNetCore.SignalR;
     using Microsoft.EntityFrameworkCore;
+
+    using Reset.Application.Interfaces.Repositories;
+    using Reset.Domain.Dtos.SignalRDtos.ChatDtos;
+    using Reset.Domain.Entities.Identity;
+
+    using ResetChat.Domain.Dtos.MessageDtos;
+    using ResetChat.Domain.Dtos.NotificationDtos;
+    using ResetChat.Domain.Dtos.UserDtos;
 
     using Hub = Microsoft.AspNetCore.SignalR.Hub;
 

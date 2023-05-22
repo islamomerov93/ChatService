@@ -3,6 +3,7 @@
   <PropertyGroup>
     <TargetFramework>net7.0</TargetFramework>
 	  <ImplicitUsings>enable</ImplicitUsings>
+	  <UserSecretsId>4143b295-cee8-4a11-80ef-19022365f101</UserSecretsId>
   </PropertyGroup>
 
   <ItemGroup>
@@ -14,6 +15,9 @@
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
+    <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.17.2" />
+    <PackageReference Include="Reset.Application" Version="1.0.1" />
+    <PackageReference Include="Reset.Infrastructure" Version="1.0.3" />
   </ItemGroup>
 
 </Project>
