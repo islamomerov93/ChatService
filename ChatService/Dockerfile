@@ -8,6 +8,7 @@ EXPOSE 443
 FROM mcr.microsoft.com/dotnet/sdk:7.0 AS build
 WORKDIR /src
 COPY ["ChatService/ChatService.csproj", "ChatService/"]
+COPY ["ChatService/nuget.config", "ChatService/"]
 RUN dotnet restore "ChatService/ChatService.csproj"
 COPY . .
 WORKDIR "/src/ChatService"

@@ -8,6 +8,8 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 
 using Reset.Application.Interfaces.Repositories;
+using Reset.Domain.Entities.Identity;
+using Reset.Infrastructure.DbContext;
 using Reset.Infrastructure.Extensions.ServiceCollectionExtensions;
 using Reset.Infrastructure.InterfaceImplementations.Repositories;
 
@@ -86,9 +88,11 @@ using (IServiceScope scope = builder.Services.BuildServiceProvider().CreateScope
             .CreateLogger(categoryName: "Data Seeding context");
         logger.LogInformation(message: "Seeding Default Data Started");
 
+        ApplicationDbContext _dbContext = scopeServiceProvider.GetRequiredService<ApplicationDbContext> ();
+        _dbContext.currentUser = new ApplicationUser { Id = Guid.Empty };
         IChatRepository _repo = scopeServiceProvider.GetRequiredService<IChatRepository> ();
 
-        _repo.CreateGeneralChat();
+        await _repo.CreateGeneralChat();
 
         logger.LogInformation(message: "Finished Seeding Default Data");
         logger.LogInformation(message: "Application Starting");
